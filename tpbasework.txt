@@ -1,0 +1,366 @@
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LP = Players.LocalPlayer
+
+-- Remove GUI antiga se existir
+local OwnerScripts = CoreGui:FindFirstChild("OwnerScripts")
+if OwnerScripts then
+    OwnerScripts:Destroy()
+end
+
+-- Variáveis globais
+local autoStealEnabled = true
+local desyncEnabled = false
+
+-- Cria nova GUI
+local OwnerScripts = Instance.new("ScreenGui")
+OwnerScripts.Name = "OwnerScripts"
+OwnerScripts.ResetOnSpawn = false
+OwnerScripts.Parent = CoreGui
+
+-- Frame principal
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 340, 0, 280)
+Frame.Position = UDim2.new(0.5, -170, 0.5, -140)
+Frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+Frame.BorderSizePixel = 0
+Frame.Parent = OwnerScripts
+Frame.Active = true
+Frame.Draggable = true
+
+local UICorner = Instance.new("UICorner")
+UICorner.Parent = Frame
+UICorner.CornerRadius = UDim.new(0, 16)
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Parent = Frame
+UIStroke.Color = Color3.fromRGB(0, 140, 255)
+UIStroke.Thickness = 2
+UIStroke.Transparency = 0.2
+
+-- Título
+local TextLabel = Instance.new("TextLabel")
+TextLabel.Size = UDim2.new(1, -20, 0, 40)
+TextLabel.Position = UDim2.new(0, 10, 0, 10)
+TextLabel.BackgroundTransparency = 1
+TextLabel.Text = "OWNER SCRIPTS"
+TextLabel.Font = Enum.Font.GothamBold
+TextLabel.TextSize = 20
+TextLabel.TextColor3 = Color3.fromRGB(0, 140, 255)
+TextLabel.Parent = Frame
+
+-- Status Label
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, -20, 0, 30)
+StatusLabel.Position = UDim2.new(0, 10, 0, 50)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "💰 Auto Steal: ON"
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 14
+StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+StatusLabel.Parent = Frame
+
+-- Botão Desync
+local DesyncButton = Instance.new("TextButton")
+DesyncButton.Size = UDim2.new(1, -40, 0, 45)
+DesyncButton.Position = UDim2.new(0, 20, 0, 90)
+DesyncButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+DesyncButton.Text = "🔧 DESYNC"
+DesyncButton.Font = Enum.Font.GothamBold
+DesyncButton.TextSize = 16
+DesyncButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+DesyncButton.Parent = Frame
+
+local DesyncCorner = Instance.new("UICorner")
+DesyncCorner.Parent = DesyncButton
+DesyncCorner.CornerRadius = UDim.new(0, 10)
+
+local DesyncStroke = Instance.new("UIStroke")
+DesyncStroke.Parent = DesyncButton
+DesyncStroke.Color = Color3.fromRGB(255, 100, 0)
+DesyncStroke.Thickness = 2
+
+-- Info Label
+local InfoLabel = Instance.new("TextLabel")
+InfoLabel.Size = UDim2.new(1, -20, 0, 80)
+InfoLabel.Position = UDim2.new(0, 10, 0, 150)
+InfoLabel.BackgroundTransparency = 1
+InfoLabel.Text = "Auto Steal ativo automaticamente\nClique em Desync para ativar FFlags\n\nScript by Owner"
+InfoLabel.Font = Enum.Font.Gotham
+InfoLabel.TextSize = 12
+InfoLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+InfoLabel.TextWrapped = true
+InfoLabel.Parent = Frame
+
+-- 🔍 Localiza sua base (DeliveryHitbox)
+local function GetMinhaBaseHitbox()
+    local plots = Workspace:FindFirstChild("Plots")
+    if not plots then return nil end
+
+    for _, plot in pairs(plots:GetChildren()) do
+        local sign = plot:FindFirstChild("PlotSign")
+        if sign then
+            local yourBase = sign:FindFirstChild("YourBase")
+            if yourBase and yourBase.Enabled then
+                local hitbox = plot:FindFirstChild("DeliveryHitbox")
+                if hitbox then return hitbox end
+            end
+        end
+    end
+    return nil
+end
+
+-- FFlags para Desync
+local FFlags = {
+    GameNetPVHeaderRotationalVelocityZeroCutoffExponent = -5000,
+    LargeReplicatorWrite5 = true,
+    LargeReplicatorEnabled9 = true,
+    AngularVelociryLimit = 360,
+    TimestepArbiterVelocityCriteriaThresholdTwoDt = 2147483646,
+    S2PhysicsSenderRate = 15000,
+    DisableDPIScale = true,
+    MaxDataPacketPerSend = 2147483647,
+    PhysicsSenderMaxBandwidthBps = 20000,
+    TimestepArbiterHumanoidLinearVelThreshold = 21,
+    MaxMissedWorldStepsRemembered = -2147483648,
+    PlayerHumanoidPropertyUpdateRestrict = true,
+    SimDefaultHumanoidTimestepMultiplier = 0,
+    StreamJobNOUVolumeLengthCap = 2147483647,
+    DebugSendDistInSteps = -2147483648,
+    GameNetDontSendRedundantNumTimes = 1,
+    CheckPVLinearVelocityIntegrateVsDeltaPositionThresholdPercent = 1,
+    CheckPVDifferencesForInterpolationMinVelThresholdStudsPerSecHundredth = 1,
+    LargeReplicatorSerializeRead3 = true,
+    ReplicationFocusNouExtentsSizeCutoffForPauseStuds = 2147483647,
+    CheckPVCachedVelThresholdPercent = 10,
+    CheckPVDifferencesForInterpolationMinRotVelThresholdRadsPerSecHundredth = 1,
+    GameNetDontSendRedundantDeltaPositionMillionth = 1,
+    InterpolationFrameVelocityThresholdMillionth = 5,
+    StreamJobNOUVolumeCap = 2147483647,
+    InterpolationFrameRotVelocityThresholdMillionth = 5,
+    CheckPVCachedRotVelThresholdPercent = 10,
+    WorldStepMax = 30,
+    InterpolationFramePositionThresholdMillionth = 5,
+    TimestepArbiterHumanoidTurningVelThreshold = 1,
+    SimOwnedNOUCountThresholdMillionth = 2147483647,
+    GameNetPVHeaderLinearVelocityZeroCutoffExponent = -5000,
+    NextGenReplicatorEnabledWrite4 = true,
+    TimestepArbiterOmegaThou = 1073741823,
+    MaxAcceptableUpdateDelay = 1,
+    LargeReplicatorSerializeWrite4 = true
+}
+
+-- Função de Respawn
+local function respawnar(plr)
+    local rcdEnabled, wasHidden = false, false
+    if gethidden then
+        rcdEnabled = gethidden(Workspace, 'RejectCharacterDeletions') ~= Enum.RejectCharacterDeletions.Disabled
+    end
+
+    if rcdEnabled and replicatesignal then
+        replicatesignal(plr.ConnectDiedSignalBackend)
+        task.wait(Players.RespawnTime - 0.1)
+        replicatesignal(plr.Kill)
+    else
+        local char = plr.Character
+        local hum = char:FindFirstChildWhichIsA('Humanoid')
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.Dead)
+        end
+        char:ClearAllChildren()
+        local newChar = Instance.new('Model')
+        newChar.Parent = Workspace
+        plr.Character = newChar
+        task.wait()
+        plr.Character = char
+        newChar:Destroy()
+    end
+end
+
+-- Função Unwalk (desabilita animações)
+local function disableAnims(character)
+    if not character then return end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid", 5)
+    if humanoid then
+        pcall(function()
+            for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+                track:Stop()
+            end
+        end)
+    end
+
+    pcall(function()
+        for _, obj in ipairs(character:GetDescendants()) do
+            if obj:IsA("Animator") or obj:IsA("AnimationController") then
+                obj:Destroy()
+            end
+        end
+    end)
+
+    local conn
+    conn = character.DescendantAdded:Connect(function(desc)
+        if desc:IsA("Animator") or desc:IsA("AnimationController") then
+            pcall(function() desc:Destroy() end)
+        elseif desc:IsA("Humanoid") then
+            pcall(function()
+                for _, track in ipairs(desc:GetPlayingAnimationTracks()) do
+                    track:Stop()
+                end
+            end)
+        end
+    end)
+
+    character.AncestryChanged:Connect(function(_, parent)
+        if not parent and conn then
+            conn:Disconnect()
+        end
+    end)
+end
+
+-- Botão Desync (ativa FFlags)
+DesyncButton.MouseButton1Click:Connect(function()
+    for name, value in pairs(FFlags) do
+        pcall(function()
+            setfflag(tostring(name), tostring(value))
+        end)
+    end
+    
+    DesyncButton.Text = "✅ DESYNC ATIVADO"
+    DesyncButton.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+    
+    respawnar(LP)
+    
+    -- Apply Unwalk after respawn
+    wait(0.5)
+    if LP.Character then
+        disableAnims(LP.Character)
+    end
+    
+    -- Apply to future respawns
+    LP.CharacterAdded:Connect(disableAnims)
+    
+    wait(2)
+    DesyncButton.Text = "🔧 DESYNC"
+    DesyncButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+end)
+
+-- Auto Steal Function
+local function toggleAutoSteal(Value)
+    autoStealEnabled = Value
+    StatusLabel.Text = autoStealEnabled and "💰 Auto Steal: ON" or "💰 Auto Steal: OFF"
+    StatusLabel.TextColor3 = autoStealEnabled and Color3.fromRGB(0, 255, 100) or Color3.fromRGB(255, 50, 50)
+    
+    if not Value then
+        return
+    end
+
+    local TARGET_HOLD_DURATION = 1.5 
+    local TARGET_MAX_DISTANCE = 10   
+    local CHECK_INTERVAL = 0.25      
+    local HOLD_TIME = 0.6            
+
+    local Character = LP.Character or LP.CharacterAdded:Wait()
+    local RootPart = Character:WaitForChild("HumanoidRootPart")
+    local myPlot = Character:FindFirstAncestorOfClass("Model") 
+
+    LP.CharacterAdded:Connect(function(c)
+        task.wait(0.12)
+        Character = c
+        RootPart = c:WaitForChild("HumanoidRootPart")
+        myPlot = c:FindFirstAncestorOfClass("Model")
+    end)
+
+    local function getBasePart(p) 
+        local par = p.Parent
+        if par:IsA("BasePart") then return par end
+        if par:IsA("Attachment") and par.Parent:IsA("BasePart") then return par.Parent end
+        if par:IsA("Model") and par.PrimaryPart then return par.PrimaryPart end
+        return nil
+    end
+
+    local function isCandidate(prompt)
+        if not prompt.Enabled or prompt.ActionText ~= "Steal" then
+            return false 
+        end
+        if math.abs((prompt.HoldDuration or 0) - TARGET_HOLD_DURATION) > 0.1
+            or math.abs((prompt.MaxActivationDistance or 0) - TARGET_MAX_DISTANCE) > 1 then
+            return false 
+        end
+
+        local part = getBasePart(prompt)
+        if not part or not RootPart then return false end
+
+        local plotsContainer = Workspace:FindFirstChild("Plots")
+        if plotsContainer then
+            local plot = part:FindFirstAncestorWhichIsA("Model")
+            if plot and plot.Parent == plotsContainer and plot == myPlot then
+                return false 
+            end
+        end
+
+        local dist = (part.Position - RootPart.Position).Magnitude
+        return dist <= TARGET_MAX_DISTANCE + 0.5, part, dist
+    end
+
+    local function findClosest()
+        local best, bestDist = nil, math.huge
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v:IsA("ProximityPrompt") then
+                local ok, part, dist = isCandidate(v)
+                if ok and dist < bestDist then
+                    best = v
+                    bestDist = dist
+                end
+            end
+        end
+        return best
+    end
+
+    local function tryActivate(prompt)
+        if not prompt then return end
+        
+        pcall(function()
+            if typeof(prompt.InputHoldBegin) == "function" then
+                prompt:InputHoldBegin()
+                task.wait(HOLD_TIME)
+                prompt:InputHoldEnd()
+            end
+        end)
+        task.wait(0.1)
+        pcall(function()
+            fireproximityprompt(prompt, 1) 
+            task.wait(HOLD_TIME)
+            fireproximityprompt(prompt, 0) 
+        end)
+    end
+
+    task.spawn(function()
+        while autoStealEnabled do
+            task.wait(CHECK_INTERVAL)
+            local prompt = findClosest() 
+            if prompt then
+                tryActivate(prompt)      
+            end
+        end
+    end)
+end
+
+-- Inicia Auto Steal automaticamente
+toggleAutoSteal(true)
+
+-- Proximity Prompt Handler (MoveTo após teleporte)
+game:GetService("ProximityPromptService").PromptButtonHoldEnded:Connect(function(Prompt, PlayerWhoTriggered)
+    if PlayerWhoTriggered == LP then
+        task.wait(1.2) -- Aguarda 1.2 segundos após o TP
+        
+        local baseHitbox = GetMinhaBaseHitbox()
+        if baseHitbox then
+            local targetPos = baseHitbox.Position
+            if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+                LP.Character.Humanoid:MoveTo(targetPos)
+            end
+        end
+    end
+end)
